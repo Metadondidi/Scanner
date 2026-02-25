@@ -2,7 +2,8 @@ import Database from "better-sqlite3";
 import path from "path";
 import type { Review, CreateReviewInput, ReviewStatus } from "@/types";
 
-const DB_PATH = path.join(process.cwd(), "data", "reviews.db");
+// On Railway: set DATABASE_PATH=/data/reviews.db and mount a volume at /data
+const DB_PATH = process.env.DATABASE_PATH ?? path.join(process.cwd(), "data", "reviews.db");
 
 let _db: Database.Database | null = null;
 

@@ -1,0 +1,11 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+# Health check — Next.js répond sur /
+healthcheckPath = "/"
+healthcheckTimeout = 30

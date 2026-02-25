@@ -14,7 +14,11 @@ export async function scrapeReviews(brand: Brand): Promise<Omit<CreateReviewInpu
   const url = BRAND_URLS[brand];
   if (!url) throw new Error(`URL non configurée pour la marque "${brand}". Vérifiez votre .env.`);
 
-  const browser = await chromium.launch({ headless: true });
+  // CHROMIUM_EXECUTABLE_PATH can be set to force a specific binary (useful in Docker)
+  const launchOptions = process.env.CHROMIUM_EXECUTABLE_PATH
+    ? { headless: true, executablePath: process.env.CHROMIUM_EXECUTABLE_PATH }
+    : { headless: true };
+  const browser = await chromium.launch(launchOptions);
   try {
     const context = await browser.newContext({
       locale: "fr-FR",
