@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database (local data — do not commit)
+data/
+
+# Playwright browsers
+playwright-report/
+test-results/
+
+# Misc
+.DS_Store
+*.log

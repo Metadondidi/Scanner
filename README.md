@@ -1,62 +1,98 @@
-# Google Reviews AI Generator
+# Reviews Scanner — Green & Red Society
 
-Générateur automatique de réponses Google Reviews pour **Green Society** et **Red Society**, propulsé par l'API Claude (Anthropic).
+Web app Next.js fullstack pour scraper, générer et valider les réponses Google Reviews avec Claude (Anthropic).
 
-## Fonctionnalités
+## Architecture
 
-- Génère des réponses personnalisées en apprenant le style de la marque depuis les réponses existantes
-- Gestion d'un workflow de validation (⏳ À valider → ✅ Publié / ❌ Rejeté)
-- Initialisation automatique des onglets avec en-têtes et **liste déroulante** sur la colonne Statut
-- Compatible multi-enseignes (GreenSociety / RedSociety)
+```
+app/
+├── page.tsx                  → Dashboard kanban (client)
+└── api/
+    ├── reviews/route.ts      → GET liste, POST création
+    ├── reviews/[id]/route.ts → PATCH statut, DELETE
+    ├── scrape/route.ts       → POST scraping Google Maps
+    └── generate/[id]/route.ts→ POST génération Claude
+
+lib/
+├── db.ts        → SQLite (better-sqlite3)
+├── scraper.ts   → Playwright scraper Google Maps
+└── claude.ts    → Appel API Claude
+
+components/
+├── KanbanBoard.tsx → Tableau 4 colonnes
+├── ReviewCard.tsx  → Carte avis + actions
+└── StarRating.tsx  → Étoiles
+
+types/index.ts    → Types partagés
+data/reviews.db   → Base SQLite (auto-créée, non versionnée)
+```
 
 ## Installation
 
-1. Ouvrez votre Google Sheets
-2. **Extensions → Apps Script** → collez le contenu de `ReviewsGenerator.gs`
-3. Remplacez `TA_CLE_API_ANTHROPIC` par votre vraie clé API Anthropic
-4. Sauvegardez puis rechargez le spreadsheet
+```bash
+# 1. Cloner et installer les dépendances
+npm install
 
-## Utilisation
+# 2. Installer les navigateurs Playwright
+npx playwright install chromium
 
-### Première utilisation
-Menu **🤖 Reviews IA → ⚙️ Initialiser les onglets**
+# 3. Configurer les variables d'environnement
+cp .env.example .env.local
+# → Renseigner ANTHROPIC_API_KEY, GREEN_SOCIETY_MAPS_URL, RED_SOCIETY_MAPS_URL
 
-Cela crée automatiquement :
-- Les en-têtes formatés (ligne 1, fond vert, texte blanc)
-- La ligne d'en-tête figée
-- La liste déroulante sur toute la colonne D avec les valeurs :
-  - `⏳ À valider`
-  - `✅ Publié`
-  - `❌ Rejeté`
+# 4. Lancer en développement
+npm run dev
+```
 
-### Générer les réponses
-Menu **🤖 Reviews IA → ✨ Générer les réponses manquantes**
+Ouvrir http://localhost:3000
 
-## Structure du Spreadsheet
+## Variables d'environnement (`.env.local`)
 
-| Colonne A      | Colonne B       | Colonne C          | Colonne D |
-|----------------|-----------------|--------------------|-----------|
-| Avis client    | Note (étoiles)  | Réponse générée    | Statut    |
+| Variable                  | Description                                      |
+|---------------------------|--------------------------------------------------|
+| `ANTHROPIC_API_KEY`       | Clé API Anthropic (https://console.anthropic.com)|
+| `GREEN_SOCIETY_MAPS_URL`  | URL Google Maps de Green Society (onglet Avis)   |
+| `RED_SOCIETY_MAPS_URL`    | URL Google Maps de Red Society (onglet Avis)     |
+| `SCRAPE_MAX_REVIEWS`      | Nombre max d'avis à scraper (défaut : 50)        |
 
 ## Workflow
 
 ```
-Réponse vide ou "aucune"
+[Scraper Google Maps]
         ↓
-Script génère via Claude
+  Avis → "À traiter"
         ↓
-    ⏳ À valider
+[Générer via Claude]
         ↓
-  Tu lis et valides
+  Réponse → "À valider"
         ↓
-✅ Publié ou ❌ Rejeté   →  Tu copie-colles sur Google Maps
+  Humain valide / rejette
+        ↓
+"Publié" → Copier-coller sur Google Maps
 ```
 
-## Logique de traitement par statut
+## Colonnes Kanban
 
-| Colonne C           | Colonne D      | Action du script              |
-|---------------------|----------------|-------------------------------|
-| vide ou "aucune"    | vide           | ✅ Génère + met ⏳ À valider   |
-| vide ou "aucune"    | ⏳ À valider    | ⛔ Ignoré (déjà généré)        |
-| vide ou "aucune"    | ✅ Publié       | ⛔ Ignoré                      |
-| texte réel          | —              | Utilisé pour l'apprentissage  |
+| Colonne     | Description                              |
+|-------------|------------------------------------------|
+| À traiter   | Avis importés, sans réponse générée      |
+| À valider   | Réponse générée, en attente de validation|
+| Publié      | Validé et publié sur Google              |
+| Rejeté      | Réponse rejetée                          |
+
+## API
+
+| Endpoint                       | Méthode | Description                     |
+|--------------------------------|---------|---------------------------------|
+| `/api/reviews?brand=green`     | GET     | Liste des avis (filtre optionnel)|
+| `/api/reviews`                 | POST    | Créer un avis manuellement      |
+| `/api/reviews/:id`             | PATCH   | Changer le statut                |
+| `/api/reviews/:id`             | DELETE  | Supprimer un avis               |
+| `/api/scrape`                  | POST    | Scraper Google Maps `{brand}`   |
+| `/api/generate/:id`            | POST    | Générer une réponse Claude      |
+
+## Notes
+
+- Le scraping Google Maps est effectué avec Playwright (headless Chromium).
+- Chaque avis est dédupliqué par `google_id` — un re-scraping ne crée pas de doublons.
+- L'apprentissage du style utilise jusqu'à 40 vraies réponses existantes en base.
