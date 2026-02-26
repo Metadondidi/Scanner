@@ -145,7 +145,7 @@ async function _extractReviews(page: Page): Promise<Omit<CreateReviewInput, "bra
           author,
           rating,
           content,
-          review_date: dateText || null,
+          review_date: dateText || undefined,
           google_id: googleId,
         });
       } catch {
