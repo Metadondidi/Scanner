@@ -57,7 +57,7 @@ ENV NODE_ENV=production
 # Copy app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public 2>/dev/null || true
+COPY --from=builder /app/public ./public
 COPY package*.json ./
 COPY next.config.mjs ./
 
