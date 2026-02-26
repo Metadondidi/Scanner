@@ -26,14 +26,10 @@ FROM node:20-slim AS runner
 WORKDIR /app
 
 # System dependencies required by Playwright Chromium
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     ca-certificates \
     fonts-liberation \
-    libappindicator3-1 \
     libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
